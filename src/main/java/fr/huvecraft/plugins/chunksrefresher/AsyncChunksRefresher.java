@@ -1,6 +1,6 @@
 /* AsyncChunksRefresher.java
  * Classe d'une tâche asynchrone de chargement des chunks du plugin AsyncChunksRefresher pour Spigot.
- * 01/11/2018. */
+ * 01/12/2018. */
 
 // Définition du package.
 
@@ -98,6 +98,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
          * Paramètres : aucun. */
         
         boolean completed            = false; // Tâche achevée.
+        boolean outOfMemory          = false; // Tâche interrompue par manque de mémoire.
         int nChunksRefreshedInRegion = 0;     // Nombre de chunks traités dans l'itération de la boucle de traitement.
         
         try
@@ -126,7 +127,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
                 
                 // Boucle.
                 
-                while(!((isStopAsked()) || (completed)))
+                while(!((isStopAsked()) || (completed) || (outOfMemory)))
                 {
                     // Détermine les coordonnées de la région associée, si son traitement débute.
                     
@@ -144,9 +145,25 @@ public final class AsyncChunksRefresher extends BukkitRunnable
                     }
                     
                     // On traite un maximum de 64 chunks à chaque itération (2 rangées de 32 chunks).
+                    // -> Si un indicateur comme quoi ce fichier a déjà été traité existe, on ignore cette région et
+                    //    et on demande le passage à la suivante.
                     
-                    if((nChunksRefreshedInRegion += refreshChunksFromFilenames(2)) < 0)
-                        throw new Error("Failed to discover and refresh chunks.");
+                    if(!(isCurrentRegionAlreadyRefreshed()))
+                    {
+                        if((nChunksRefreshedInRegion += refreshChunksFromFilenames(2)) < 0)
+                            throw new Error("Failed to discover and refresh chunks.");
+                        
+                        // Nettoyage.
+                        
+                        System.gc();
+                    }
+                    
+                    else
+                    {
+                        safeLogger.logInfo("Region already refreshed ! Skipping...");
+                        
+                        nextRegion = true;
+                    }
                     
                     // Région en cours terminée ?
                     
@@ -154,30 +171,65 @@ public final class AsyncChunksRefresher extends BukkitRunnable
                     {
                         safeLogger.logInfo(nChunksRefreshedInRegion + " chunks discovered and refreshed in region X:" + xCurrentRegion + " Z:" + zCurrentRegion + " of world \"" + worldData.getWorldName() + "\".");
                         
-                        // Incrémente l'index de la région en cours et ajoute le total des chunks traités dans la région à ceux du monde.
-                        
-                        currentRegionIndex++;
-                        
-                        nChunksRefreshedInWorld += nChunksRefreshedInRegion;
-                        
                         // Toutes les régions ont été traitées ?
                         
-                        if(currentRegionIndex == regionFilesList.size())
+                        if(currentRegionIndex == regionFilesList.size() - 1) // Oui ?
+                        {
                             completed = true; // Arrête la boucle.
+                        }
+                        
+                        else                                             // Non.
+                        {
+                        
+                            // Créé un indicateur marquant la région en cours comme totalement raffraichie.
+                            
+                            getCurrentRegionRefreshedIndicator().createNewFile(); // Pas de contrôle.
+                            
+                            // Contrôle mémoire disponible (1Go nécessaire considéré).
+                            
+                            if(Runtime.getRuntime().freeMemory() < 1073741824L) // Insuffisante, arrêt de la tâche.
+                            {
+                                // Message console.
+                                
+                                safeLogger.logWarning("Server is running out of memory. For safety, chunk refreshing for world \"" + worldData.getWorldName() + "\" has been stopped.");
+                                safeLogger.logWarning("Try restart task after clearing memory or restarting server, don't worry, it will resume on the first unrefreshed region ;)");
+                                
+                                // Arrêt de la boucle.
+                                
+                                outOfMemory = true;
+                            }
+                            
+                            else                                                // Suffisante, on continue avec la région suivante.
+                            {
+                                // Incrémente l'index de la région en cours et ajoute le total des chunks traités dans la région à ceux du monde.
+                                
+                                currentRegionIndex++;
+                                
+                                nChunksRefreshedInWorld += nChunksRefreshedInRegion;
+                            }
+                        }
                     }
                     
-                    // Pause 10ms.
+                    // Pause 100ms (2 Bukkit ticks)
                     
-                    Thread.sleep(10L);
+                    Thread.sleep(50L);
                 }
             }
             
             safeLogger.logInfo("Total of " + nChunksRefreshedInWorld + " chunks discovered and refreshed in world \"" + worldData.getWorldName() + "\".");
             
+            // Nettoyage des fichiers indicateurs si la carte a été traité complètement.
+            
+            if(completed)
+                cleanRegionRefreshedIndicators();
+            
             // Fin d'exécution.
             
             if((completed) || (isStopAsked()))
                 safeLogger.logInfo("Chunks refresh " + (completed ? "completed" : "endded") + " for world \"" + worldData.getWorldName() + "\".");
+            
+            else if(outOfMemory)
+                safeLogger.logWarning("Chunks refresh suspended for world \"" + worldData.getWorldName() + "\".");
             
             else
                 safeLogger.logError("Chunks refresh endded for world \"" + worldData.getWorldName() + "\".");
@@ -216,6 +268,11 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         
         String regionFilenameParts[] = null;
         
+        // Contrôles.
+        
+        if(!(regionFilesList instanceof List<?>))
+            throw new IllegalArgumentException("Object not ready to use.");
+        
         // Détermine les coordonnées de la région.
         
         regionFilenameParts = regionFilesList.get(currentRegionIndex).getName().split("\\.");
@@ -234,6 +291,11 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         
         try
         {
+            // Contrôles.
+            
+            if((!(safeLogger instanceof SafeLogger)) || (!(world instanceof World)))
+                throw new IllegalArgumentException("Object not ready to use.");
+            
             // Obtient les données depuis Bukkit.
             
             if((futureWorldData = scheduler.callSyncMethod(chunkRefresherPlugin, new WorldData(safeLogger, world))) == null)
@@ -257,6 +319,17 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         return true;
     }
     
+    private boolean isCurrentRegionAlreadyRefreshed() throws Exception
+    {
+        /* Indique si la région en cours a déjà été totalement raffraichie, par existence ou non d'un fichier indicateur.
+         * Retour : oui ou non. 
+         * Paramètres : aucun. */
+        
+        // Contrôle l'existence d'un fichier indicateur dans le dossier du monde.
+        
+        return getCurrentRegionRefreshedIndicator().exists();
+    }
+    
     private boolean isStopAsked()
     {
         /* Indique si la tâche doit s'arrêter.
@@ -275,6 +348,31 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         return mustStopLocal;
     }
     
+    private File getCurrentRegionRefreshedIndicator() throws Exception
+    {
+        /* Retourne le fichier indicateur de région raffraichie.
+         * Paramètres : aucun.
+         * Retour : fichier indicateur en question, existant ou non. */
+        
+        File currentRegionRefreshedIndicator = null; // Fichier indicateur.
+        
+        // Contrôle.
+        
+        if(!(worldData instanceof WorldData))
+            throw new IllegalArgumentException("Object not ready to use.");
+        
+        // Obtention du fichier.
+        
+        currentRegionRefreshedIndicator = new File(worldData.getWorldRegionFolder(), "r." + xCurrentRegion + "." + zCurrentRegion + ".chkref");
+        
+        if((currentRegionRefreshedIndicator.exists()) && (((!(currentRegionRefreshedIndicator.isFile())) || (currentRegionRefreshedIndicator.length() > 0L))))
+            throw new Exception("Invalid region refreshed indicator file.");
+        
+        // Retour, existant ou non.
+        
+        return currentRegionRefreshedIndicator;
+    }
+    
     private int refreshChunksFromFilenames(int nLinesOfChunks) throws InterruptedException
     {
         /* Découvre et raffrichi au maximum n rangées de 32 chunks dans la région en cours.
@@ -287,6 +385,11 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         
         try
         {
+            // Contrôles.
+            
+            if((!(safeLogger instanceof SafeLogger)) || (!(world instanceof World)))
+                throw new IllegalArgumentException("Object not ready to use.");
+            
             if((nLinesOfChunks < 1) || (nLinesOfChunks > 32))
                 throw new IllegalArgumentException();
             
@@ -319,6 +422,44 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         return nChunksRefreshedRegion;
     }
     
+    private void cleanRegionRefreshedIndicators() throws Exception
+    {
+        /* Supprime tous les fichiers indicateurs de la carte concernée.
+         * Retour : aucun.
+         * Paramètres : aucun. */
+        
+        File[] regionsRefreshedIndicators = null; // Liste obtenue.
+        
+        // Log. 
+
+        safeLogger.logInfo("Cleaning region refreshed indicators...");
+        
+        // Contrôle.
+        
+        if(!(worldData instanceof WorldData))
+            throw new IllegalArgumentException("Object not ready to use.");
+        
+        // Liste les fichiers indicateurs. 
+        
+        if((regionsRefreshedIndicators = worldData.getWorldRegionFolder().listFiles(new RegionRefreshedIndicatorsFilter())) == null)
+            throw new Error("Can't get world region refreshed indicators list.");
+        
+        // Supprime les fichiers indicateurs.
+        
+        for(int indicatorIndex = 0; indicatorIndex < regionsRefreshedIndicators.length; indicatorIndex++)
+        {
+            if(!(regionsRefreshedIndicators[indicatorIndex].delete()))
+            {
+                safeLogger.logWarning("Region refreshed indicator file \"" + regionsRefreshedIndicators[indicatorIndex].getName() + "\" from world \"" + worldData.getWorldName() + "\" cannot be deleted.");
+                safeLogger.logWarning("This file is not required anymore, you should delete it by yourself carrefully.");
+            }
+        }
+        
+        // Log. 
+
+        safeLogger.logInfo("Region refreshed indicators cleaned.");
+    }
+    
     private void futureWaiter(Future<?> future) throws IllegalArgumentException, InterruptedException
     {
         /* Attend la fin d'une tâche synchrone du thread Bukkit.
@@ -349,24 +490,19 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         
         File[] regionsFiles = null; // Liste obtenue.
         
-        try
-        {
-            // Liste les fichiers. 
-            
-            if((regionsFiles = worldData.getWorldRegionFolder().listFiles(new RegionFilesFilter())) == null)
-                throw new Error("Can't get world region files list.");
-            
-            // Enregistre le résulat sous forme de List.
-            
-            regionFilesList = Arrays.asList(regionsFiles);
-        }
+        // Contrôle.
         
-        catch(Exception|Error error)
-        {
-            // Echec. 
-            
-            throw error;
-        }
+        if(!(worldData instanceof WorldData))
+            throw new IllegalArgumentException("Object not ready to use.");
+        
+        // Liste les fichiers. 
+        
+        if((regionsFiles = worldData.getWorldRegionFolder().listFiles(new RegionFilesFilter())) == null)
+            throw new Error("Can't get world region files list.");
+        
+        // Enregistre le résulat sous forme de List.
+        
+        regionFilesList = Arrays.asList(regionsFiles);
     }
 }
 
@@ -444,7 +580,7 @@ final class ChunksEnumerator implements Callable<Integer>
                     
                     zChunk = (zRegion * 32) + zChunkIndex;
                     
-                    // Ajoute le chunk à la liste de ceux traités, s'il existe.
+                    // Traite le chunk concerné, s'il existe.
                     
                     if(world.isChunkGenerated(xChunk, zChunk)) // Existe ?
                     {
@@ -467,15 +603,11 @@ final class ChunksEnumerator implements Callable<Integer>
                         nRegionChunksRefreshed++;
                     }
                 }
-                
-                // Pause 10ms.
-                
-                Thread.sleep(10L);
             }
         }
         
         catch(Exception|Error exception)
-        {
+        {   
             // Echec.
             
             return -1;
@@ -508,6 +640,33 @@ final class RegionFilesFilter implements FilenameFilter
         // Filtrage.
         
         if(filename.matches("(?i)\\Ar\\.-?\\d+\\.-?\\d+\\.mca\\z")) // JS version : /^r\\.-?\\d+\\.-?\\d+\\.mca$/gi
+            return true;
+        
+        return false;
+    }
+}
+
+final class RegionRefreshedIndicatorsFilter implements FilenameFilter
+{
+    /* Classe permettant de ne lister que les fichiers indicateurs des régions déjà traitées lors de l'exploration du dossier du jeu. */
+    
+    // Méthodes publiques de classe.
+    
+    @Override
+    public boolean accept(File hostDirectory, String filename) throws IllegalArgumentException
+    {
+        /* Fonction effectuant la sélection.
+         * Retour : fichier accepté ou non.
+         * Paramètres : dossier hôte et nom du fichier en question. */
+        
+        // Contrôle.
+        
+        if(!(filename instanceof String))
+            throw new IllegalArgumentException();
+        
+        // Filtrage.
+        
+        if(filename.matches("(?i)\\Ar\\.-?\\d+\\.-?\\d+\\.chkref\\z")) // JS version : /^r\\.-?\\d+\\.-?\\d+\\.chkref$/gi
             return true;
         
         return false;
