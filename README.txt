@@ -1,5 +1,5 @@
-ChunksRefresher 0.0.2-SNAPSHOT-2018-12-01-2
-(c)Damien VERLYNDE. All rights reserved.
+ChunksRefresher 0.0.3-SNAPSHOT-20191104-1
+(c)Damien VERLYNDE and contributors. All rights reserved.
 ---------------
 WARNING:
 This plugin comes with no warranty and is provided "as-is".
@@ -11,12 +11,13 @@ You can distribute this program freely, but only in is original zip package, inc
 Why ? To make sure it's correctly used and don't make damage, and users can contact me if they want.
 ---------------
 CONTACT:
-For any question, suggestion : please contact Damien VERLYNDE at damien.verlynde@live.fr
+For any question, suggestion : please contact us on : https://www.huvecraft.fr/?page=contact
 ---------------
 USING :
 -Important :
 	-Save your whole server !
 	-Close your server to players, and you should suspend any task running.
+	-Disable dynmap, completely (prefered) or making /dynmap pause all, for example. Not doing this can cause server overload.
 -Type in CONSOLE only : chkref <worldname>
 	-World refreshing will start, task duration depends on the size of your world and your server, it can be very long. All chunks are loaded and so unloaded.
 	-Make this for all your worlds.
