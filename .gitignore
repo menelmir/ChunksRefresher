@@ -1,2 +1,4 @@
 /target/
-/README.old_0_0_1
+/.settings
+/.project
+/.classpath
