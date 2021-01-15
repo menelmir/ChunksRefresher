@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fr.huvecraft.plugins</groupId>
     <artifactId>chunksrefresher</artifactId>
-    <version>0.0.3-SNAPSHOT-20191104-01</version>
+    <version>0.0.5-SNAPSHOT</version>
     <name>ChunksRefresher</name>
     <description>Plugin browsing through chunks of a map and loading them like if it was a player</description>
     <properties>
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.13.1-R0.1-SNAPSHOT</version>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
