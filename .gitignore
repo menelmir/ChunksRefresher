@@ -1,4 +1,7 @@
-/target/
-/.settings
-/.project
+/target
+/.vscode
 /.classpath
+/.project
+/.factorypath
+/.settings
+/.apt_generated_tests

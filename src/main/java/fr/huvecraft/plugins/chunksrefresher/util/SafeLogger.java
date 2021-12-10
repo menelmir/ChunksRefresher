@@ -2,7 +2,7 @@
  * Classe SafeLogger du plugin ChunksRefresher pour Spigot.
  * 23/10/2018. */
 
-// Définition du package.
+// DÃ©finition du package.
 
 package fr.huvecraft.plugins.chunksrefresher.util;
 
@@ -11,19 +11,19 @@ package fr.huvecraft.plugins.chunksrefresher.util;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-// Définition de la classe.
+// DÃ©finition de la classe.
 
 public class SafeLogger
 {
     // Membres.
     
-    final Logger logger; // Loggueur à utiliser, final pour thread-safe.
+    final Logger logger; // Loggueur Ã  utiliser, final pour thread-safe.
     
     // Constructeurs.
     
     public SafeLogger(Logger logger)
     {
-        /* Constructeur par défaut. */
+        /* Constructeur par dÃ©faut. */
         
         this.logger = logger; // Loggueur.
     }
@@ -32,34 +32,34 @@ public class SafeLogger
     {
         /* Enregistre un message dans le journal du niveau voulu.
          * Retour : aucun.
-         * Paramètres : niveau de criticité et message associé. */
+         * ParamÃ¨tres : niveau de criticitÃ© et message associÃ©. */
         
         logger.log(level, message);
     }
     
     public void logError(String message)
     {
-        /* Emet un évenement au journal du type SEVERE. 
+        /* Emet un Ã©venement au journal du type SEVERE. 
          * Retour : aucun.
-         * Paramètres : aucun. */
+         * ParamÃ¨tres : aucun. */
         
         this.log(Level.SEVERE, message);
     }
     
     public void logInfo(String message)
     {
-        /* Emet un évenement au journal du type INFO. 
+        /* Emet un Ã©venement au journal du type INFO. 
          * Retour : aucun.
-         * Paramètres : aucun. */
+         * ParamÃ¨tres : aucun. */
         
         this.log(Level.INFO, message);
     }
     
     public void logWarning(String message)
     {
-        /* Emet un évenement au journal du type INFO. 
+        /* Emet un Ã©venement au journal du type INFO. 
          * Retour : aucun.
-         * Paramètres : aucun. */
+         * ParamÃ¨tres : aucun. */
         
         this.log(Level.WARNING, message);
     }

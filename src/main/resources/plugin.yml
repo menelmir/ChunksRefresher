@@ -1,18 +1,18 @@
 name: ChunksRefresher
-version: 0.0.5-SNAPSHOT
+version: 0.0.6-SNAPSHOT-20211210
 description: Plugin browsing through chunks of a map and loading them like if it was a player
 author: Damien VERLYNDE
 website: http://www.huvecraft.fr/
 main: fr.huvecraft.plugins.chunksrefresher.ChunksRefresher
-api-version: 1.13
+api-version: 1.18
 database: false
 
 commands:
   chunksrefresher:
-    description: Refresh chunks of a world by loading them
+    description: Refresh chunks of a world by loading them ; add "cancel" or "pause" to kill or suspend an operation
     aliases: chkref
     permission: chunksrefresher.use
-    usage: "Usage: /chunksrefresher or /chkref [world]"
+    usage: "Usage: /chunksrefresher or /chkref <world> [create | cancel | pause | resume] [nomemcheck]"
 
 permissions:
   chunksrefresher.use:

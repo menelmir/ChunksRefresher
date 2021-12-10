@@ -2,22 +2,87 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fr.huvecraft.plugins</groupId>
     <artifactId>chunksrefresher</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>0.0.6-SNAPSHOT-20211210</version>
     <name>ChunksRefresher</name>
     <description>Plugin browsing through chunks of a map and loading them like if it was a player</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <pluginRepositories>
+      <pluginRepository>
+        <id>apache.snapshots</id>
+        <url>https://repository.apache.org/snapshots/</url>
+        <releases>
+	        <updatePolicy>daily</updatePolicy>
+	    </releases>
+	    <snapshots>
+	      <updatePolicy>daily</updatePolicy>
+	    </snapshots>
+      </pluginRepository>
+    </pluginRepositories>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>17</release>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.0.0-M1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.3.0-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+		                    <minimizeJar>true</minimizeJar>
+                            <artifactSet>
+		                        <includes>
+		                            <include>javax.activation:javax.activation-api</include>
+		                        </includes>
+		                    </artifactSet>
+		                    <filters>
+				                <filter>
+				                    <artifact>*:*</artifact>
+				                    <excludes>
+				                        <exclude>META-INF/*</exclude>
+				                    </excludes>
+	 		                    </filter>
+			                </filters>
+		                </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -28,18 +93,23 @@
        </repository>
     </repositories>
     <dependencies>
+        <!--JavaX Validation-->
+        <dependency>
+		    <groupId>javax.validation</groupId>
+		    <artifactId>validation-api</artifactId>
+		    <version>2.0.1.Final</version>
+		</dependency>
+		<!--JavaX Activation-->
+		<dependency>
+		    <groupId>javax.activation</groupId>
+		    <artifactId>javax.activation-api</artifactId>
+		    <version>1.2.0</version>
+		</dependency>
         <!--Spigot API-->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <!--Bukkit API-->
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.13.2-R0.1-SNAPSHOT</version>
+            <version>1.18-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
