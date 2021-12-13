@@ -1,5 +1,5 @@
 name: ChunksRefresher
-version: 0.0.6-SNAPSHOT-20211210
+version: 0.0.7-SNAPSHOT-20211214-1
 description: Plugin browsing through chunks of a map and loading them like if it was a player
 author: Damien VERLYNDE
 website: http://www.huvecraft.fr/

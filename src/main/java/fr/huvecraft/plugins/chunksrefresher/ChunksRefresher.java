@@ -1,6 +1,6 @@
 /* ChunksRefresher.java
  * Classe principale du plugin ChunksRefresher pour Spigot.
- * 10/12/2021. */
+ * 13/12/2021. */
 
 // Définition du package.
 
@@ -263,6 +263,15 @@ public final class ChunksRefresher extends JavaPlugin
                         /* Créé une tâche asynchrone pour traiter les chunks du monde spécifié, reprenant éventuellement là où elle s'était arrêtée. */
                         
                         safeLogger.logInfo("Creating asynchronous task to refresh chunks of world \"" + args[0] + "\"...");
+
+                        achunksRefresher = achunksRefreshers.get(world);
+                        
+                        if(achunksRefresher != null)
+                        {
+                            safeLogger.logWarning("An existing task already exists for world \"" + args[0] + "\".");
+
+                            return;
+                        }
                         
                         achunksRefresher = new AsyncChunksRefresher(bukkitScheduler, safeLogger, this, world, args[args.length - 1].equalsIgnoreCase("nomemcheck"));
                                 
@@ -289,7 +298,7 @@ public final class ChunksRefresher extends JavaPlugin
                         
                         if(achunksRefresher == null)
                         {
-                            safeLogger.logWarning("No existing task found for world \"" + args[0] + "\"");
+                            safeLogger.logWarning("No existing task found for world \"" + args[0] + "\".");
 
                             return;
                         }
@@ -312,7 +321,7 @@ public final class ChunksRefresher extends JavaPlugin
                         
                         if(achunksRefresher == null)
                         {
-                            safeLogger.logWarning("No existing task found for world \"" + args[0] + "\"");
+                            safeLogger.logWarning("No existing task found for world \"" + args[0] + "\".");
 
                             return;
                         }

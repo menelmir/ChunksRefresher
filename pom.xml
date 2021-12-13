@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>fr.huvecraft.plugins</groupId>
     <artifactId>chunksrefresher</artifactId>
-    <version>0.0.6-SNAPSHOT-20211210</version>
+    <version>0.0.7-SNAPSHOT-20211214-1</version>
     <name>ChunksRefresher</name>
     <description>Plugin browsing through chunks of a map and loading them like if it was a player</description>
     <properties>

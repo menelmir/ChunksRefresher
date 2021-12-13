@@ -1,10 +1,12 @@
 /* AsyncChunksRefresher.java
  * Classe d'une tâche asynchrone de chargement des chunks du plugin AsyncChunksRefresher pour Spigot.
- * 10/12/2021. */
+ * 14/12/2021. */
 
 // Définition du package.
 
 package fr.huvecraft.plugins.chunksrefresher;
+
+import fr.huvecraft.plugins.chunksrefresher.util.ChkRefException;
 
 // Imports.
 
@@ -52,15 +54,15 @@ public final class AsyncChunksRefresher extends BukkitRunnable
     
     // Constructeurs.
     
-    public AsyncChunksRefresher(BukkitScheduler scheduler, SafeLogger safeLogger, ChunksRefresher chunkRefresherPlugin, World world, boolean noMemControl)
+    public AsyncChunksRefresher(BukkitScheduler scheduler, SafeLogger safeLogger, ChunksRefresher chunkRefresherPlugin, World world, boolean noMemControl) throws ChkRefException
     {
         /* Constructeur par défaut. */
         
         if(!(world instanceof World))
-            throw new Error("Invalid world specified.");
+            throw new ChkRefException("Invalid world specified.");
         
         else if(!((scheduler instanceof BukkitScheduler) && (safeLogger instanceof SafeLogger) && (chunkRefresherPlugin instanceof ChunksRefresher)))
-            throw new Error("Invalid parameters.");
+            throw new ChkRefException("Invalid parameters.");
         
         this.abort                   = false;
         this.mustStop                = false;
@@ -169,7 +171,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
             safeLogger.logInfo("Getting world data...");
             
             if(!(getWorldData()))
-                throw new Error("Failed to get world data.");
+                throw new ChkRefException("Failed to get world data.");
             
             safeLogger.logInfo("World spawn location is X:" + worldData.getXSpawnLocation() + " Y:" + worldData.getYSpawnLocation() + " Z:" + worldData.getZSpawnLocation() + ".");
             
@@ -227,7 +229,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
                     if(!(isCurrentRegionAlreadyRefreshed()))
                     {
                         if((nChunksRefreshedInRegion += refreshChunksFromFilenames(2)) < 0)
-                            throw new Error("Failed to discover and refresh chunks.");
+                            throw new ChkRefException("Failed to discover and refresh chunks.");
                         
                         // Nettoyage.
                         
@@ -369,7 +371,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         zCurrentRegion = Integer.parseInt(regionFilenameParts[2]);
     }
     
-    private boolean getWorldData() throws InterruptedException
+    private boolean getWorldData() throws InterruptedException, ChkRefException
     {
         /* Obtient les données du monde.
          * Retour : objet Location ou null si échec.
@@ -387,12 +389,12 @@ public final class AsyncChunksRefresher extends BukkitRunnable
             // Obtient les données depuis Bukkit.
             
             if((futureWorldData = scheduler.callSyncMethod(chunkRefresherPlugin, new WorldData(safeLogger, world))) == null)
-                throw new Error("Failed to get world data.");
+                throw new ChkRefException("Failed to get world data.");
             
             futureWaiter(futureWorldData);
             
             if((worldData = futureWorldData.get()) == null)
-                throw new Error("Failed to get world data.");
+                throw new ChkRefException("Failed to get world data.");
         }        
         
         catch(ExecutionException|IllegalArgumentException|Error error)
@@ -485,7 +487,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         return currentRegionRefreshedIndicator;
     }
     
-    private int refreshChunksFromFilenames(int nLinesOfChunks) throws InterruptedException
+    private int refreshChunksFromFilenames(int nLinesOfChunks) throws InterruptedException, ChkRefException
     {
         /* Découvre et raffrichi au maximum n rangées de 32 chunks dans la région en cours.
          * Retour : aucun.
@@ -508,12 +510,12 @@ public final class AsyncChunksRefresher extends BukkitRunnable
             // Enumération chunks dans la région.
             
             if((futureChunksRefreshed = scheduler.callSyncMethod(chunkRefresherPlugin, new ChunksEnumerator(safeLogger, world, xCurrentRegion, zCurrentRegion, xCurrentChunkStart, nLinesOfChunks))) == null)
-                throw new Error("Failed to refresh chunks.");
+                throw new ChkRefException("Failed to refresh chunks.");
             
             futureWaiter(futureChunksRefreshed);
             
             if((nChunksRefreshedRegion = futureChunksRefreshed.get()) == -1)
-                throw new Error("Failed to refresh chunks.");
+                throw new ChkRefException("Failed to refresh chunks.");
             
             // Déplace le pointeur vers la prochaine rangée de chunks à traiter,
             // indique que la région a été totalement traitée si on a traité 31 rangées de celle-ci.
@@ -554,7 +556,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         // Liste les fichiers indicateurs. 
         
         if((regionsRefreshedIndicators = worldData.getWorldRegionFolder().listFiles(new RegionRefreshedIndicatorsFilter())) == null)
-            throw new Error("Can't get world region refreshed indicators list.");
+            throw new ChkRefException("Can't get world region refreshed indicators list.");
         
         // Supprime les fichiers indicateurs.
         
@@ -610,7 +612,7 @@ public final class AsyncChunksRefresher extends BukkitRunnable
         // Liste les fichiers. 
         
         if((regionsFiles = worldData.getWorldRegionFolder().listFiles(new RegionFilesFilter())) == null)
-            throw new Error("Can't get world region files list.");
+            throw new ChkRefException("Can't get world region files list.");
         
         // Enregistre le résulat sous forme de List.
         
@@ -703,7 +705,7 @@ final class ChunksEnumerator implements Callable<Integer>
                         // Obtient le chunk aux coordonnées indiquées.
 
                         if((currentChunk = world.getChunkAt(xChunk, zChunk)) == null)
-                            throw new Error("Cannot refresh chunk.");
+                            throw new ChkRefException("Cannot refresh chunk.");
                         
                         // Le décharge s'il n'était pas chargé avant l'opération.
                         
@@ -903,7 +905,7 @@ final class WorldData implements Callable<WorldData>
                 break;
                 
             default:
-                throw new Error("Unknown world environement");    
+                throw new ChkRefException("Unknown world environement");    
         }
         
         worldRegionFolder = new File(worldFolder, worldRegionFolderPath);

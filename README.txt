@@ -1,4 +1,4 @@
-ChunksRefresher 0.0.6-SNAPSHOT
+ChunksRefresher 0.0.7-SNAPSHOT-20211214-1
 (c)Damien VERLYNDE and contributors. All rights reserved.
 ---------------
 WARNING:
