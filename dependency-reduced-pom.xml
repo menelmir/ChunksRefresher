@@ -4,7 +4,7 @@
   <groupId>fr.huvecraft.plugins</groupId>
   <artifactId>chunksrefresher</artifactId>
   <name>ChunksRefresher</name>
-  <version>0.0.7-SNAPSHOT-20211214-1</version>
+  <version>0.0.8-SNAPSHOT-20211217-1</version>
   <description>Plugin browsing through chunks of a map and loading them like if it was a player</description>
   <build>
     <plugins>
@@ -12,7 +12,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <release>17</release>
+          <release>12</release>
         </configuration>
       </plugin>
       <plugin>
@@ -46,11 +46,6 @@
             </goals>
             <configuration>
               <minimizeJar>true</minimizeJar>
-              <artifactSet>
-                <includes>
-                  <include>javax.activation:javax.activation-api</include>
-                </includes>
-              </artifactSet>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
@@ -85,15 +80,9 @@
   </pluginRepositories>
   <dependencies>
     <dependency>
-      <groupId>javax.validation</groupId>
-      <artifactId>validation-api</artifactId>
-      <version>2.0.1.Final</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.18-R0.1-SNAPSHOT</version>
+      <version>1.13.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

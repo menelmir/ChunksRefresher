@@ -1,6 +1,6 @@
 /* AsyncChunksRefresher.java
  * Classe d'une tâche asynchrone de chargement des chunks du plugin AsyncChunksRefresher pour Spigot.
- * 14/12/2021. */
+ * 17/12/2021. */
 
 // Définition du package.
 
@@ -290,7 +290,15 @@ public final class AsyncChunksRefresher extends BukkitRunnable
                     
                     // Pause 100ms (2 Bukkit ticks)
                     
-                    Thread.sleep(50L);
+                    try
+                    {
+                        Thread.sleep(50L);
+                    }
+
+                    catch(InterruptedException exception)
+                    {
+                        // Rien d'anormal.
+                    }
                 }
             }
             
@@ -592,7 +600,15 @@ public final class AsyncChunksRefresher extends BukkitRunnable
             if(future.isCancelled())
                 throw new InterruptedException("Synchronous task canceled.");
             
-            Thread.sleep(5L);
+            try
+            {
+                Thread.sleep(5L);
+            }
+
+            catch(InterruptedException exception)
+            {
+                // Rien d'anormal.
+            }
         }
     } 
     
